@@ -6,7 +6,7 @@ let scrape = async () => {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
-    await page.goto('https://www.daraz.pk/haier-pakistan/?q=All-Products&langFlag=en&from=wangpu&lang=en&pageTypeId=2/');
+    await page.goto('https://www.daraz.pk/dawlance1621855818/?q=All-Products&langFlag=en&from=wangpu&lang=en&pageTypeId=2');
 
     var results = []; 
     var lastPageNumber = 4;

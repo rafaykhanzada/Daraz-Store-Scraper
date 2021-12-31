@@ -1,14 +1,18 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-async function scrapper(url,lastPageNumber){
-    let scrape = async () => {
+async function scrapper(url){
          const browser = await puppeteer.launch({ headless: false });
          const page = await browser.newPage();
     
          await page.goto(url);
     
-        var results = [];     
+        var results = []; 
+        const [rating] = await page.$x('//*[@id="module_product_review_star_1"]/div/a[1]');
+        const product_rating = await (await rating.getProperty('innerText')).jsonValue().then((value)=>JSON.stringify(value));  
+        let num = product_rating.split(" ")[0].replace('\"'," ").trim();
+        // console.log(num);
+        lastPageNumber = Math.round(num/5);  
         for (let index = 0; index < lastPageNumber; index++) {
             
            await page.waitForTimeout(1000)
@@ -21,11 +25,11 @@ async function scrapper(url,lastPageNumber){
                 
             }
         }
-    browser.close();
+        browser.close();
         return results;
-    };
-    
-    async function extractedEvaluateCall(page) {
+
+}
+async function extractedEvaluateCall(page) {
         return page.evaluate(() => {
             let data = [];
             var rating_score=0;
@@ -47,21 +51,35 @@ async function scrapper(url,lastPageNumber){
                             comment
                         }
                         rating_score=0;
+                        
                  data.push(arr);
             })      
-           
+            data = data.filter(function(item, pos) {
+                return data.indexOf(item) == pos;
+            })
             return data;
         });
     }
-    
-    scrape().then((value) => {
-        console.log(value);
-        fs.appendFile('data.csv', value.toString(), function (err) {
-            if (err) throw err;
-          });
-    });
-    
+
+async function ReadCSV_urls(){
+   
+    let data_lines=require('fs').readFileSync('urls.txt', 'utf-8').split(/\r?\n/);
+    for (let line in data_lines) {         
+     let res = await scrapper("https:"+data_lines[line].replace(","," ").trim().toString());   
+     var dir = './Products/'+data_lines[line].slice(24).split(".")[0];
+     if (!fs.existsSync(dir)){
+     await fs.mkdirSync(dir, { recursive: true });
+  }
+      await writeCSV(dir,res); 
+            
+    }
 }
-let uri = 'https://www.daraz.pk/products/haier-white-air-fryer-4-ltr-haf40w-i3371566-s12826354.html?mp=1';
-scrapper(uri,4);
+
+async function writeCSV(path,obj){
+   await fs.appendFile(path+'/reviews.csv', JSON.stringify(obj).trim()+'\n', function (err) {
+        if (err) throw err;
+      });      
+}
+
+ReadCSV_urls();
 module.exports = {scrapper}

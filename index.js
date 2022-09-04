@@ -2,47 +2,74 @@ const puppeteer=require('puppeteer');
 const fs = require('fs');
 
 async function scrapeProduct(url){
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({ headless: false });
     const page =  await browser.newPage();
-    await page.goto(url);      
-    
-    //Elements
-    const [name] = await page.$x('//*[@id="module_product_title_1"]/div/div/span');
-    const [price] = await page.$x('//*[@id="module_product_price_1"]/div/div/span');    
-    const [rating] = await page.$x('//*[@id="module_product_review_star_1"]/div/a[1]');
-    const [brand] = await page.$x('//*[@id="module_product_brand_1"]/div/a[1]');   
-    const [desc_title] = await page.$x('//*[@id="module_product_detail"]/h2');
-    const [image] = await page.$x('//*[@id="module_item_gallery_1"]/div/div[1]/div/img');
-    
-    //Filter out data
-    const product_name = await (await name.getProperty('innerText')).jsonValue().then((value)=>JSON.stringify(value));
-    const product_price = await (await price.getProperty('innerText')).jsonValue().then((value)=>JSON.stringify(value));    
-    const product_rating = await (await rating.getProperty('innerText')).jsonValue().then((value)=>JSON.stringify(value));
-    const product_brand = await (await brand.getProperty('innerText')).jsonValue().then((value)=>JSON.stringify(value));  
-    const product_desc_title = await (await desc_title.getProperty('innerText')).jsonValue().then((value)=>JSON.stringify(value));
-    const product_image = await (await image.getProperty('src')).jsonValue().then((value)=>JSON.stringify(value));
-   
-    //Basic Information
-    var savingData =product_name + ','+product_price + ','+product_rating + ','+product_brand + ','+product_desc_title + ','+product_image + ',\n';
+    await page.goto('https://arifl3.sg-host.com/qb-login');
+    await page.$eval('#user_login', el => el.value = 'qist.admin');
+    await page.$eval('#user_pass', el => el.value = 'NnD08RVtzwEApAeBWgaj72^1'); 
+    ///#wp-submit
+    await page.click('#wp-submit');
+    await page.waitForTimeout(5000)
+    var results = []; 
+
+    for (let index = 4; index < url.length; index++) {
+      await page.goto(url[index]);      
+      await page.waitForTimeout(5000)
+      var [user_cnic]=[];
+    var [user_area]=[];
+      //Elements
+      const [user_ip] = await page.$x('//*[@id="order_data"]/p/span');
+      const [user_address] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[1]/p[1]');    
+      const [user_email] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[1]/p[2]/a');
+      const [user_phone] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[1]/p[3]/a');   
+      const [user_designation] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[3]');
+      
+      
+      ////*[@id="order_data"]/div[1]/div[2]/div[3]/p[2]
+      let designation ="";
+      //Filter out data
+      if (user_designation!=null) {
+       designation = await (await user_designation.getProperty('innerText')).jsonValue().then((value)=>value);
+       [user_cnic] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[2]');
+[user_area] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[3]');
+        
+      }else{
+        [user_cnic] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[1]');
+[user_area] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[2]');
+      }
+      const ip = await (await user_ip.getProperty('innerText')).jsonValue().then((value)=>value);
+      const address = await (await user_address.getProperty('innerText')).jsonValue().then((value)=>value);    
+      const email = await (await user_email.getProperty('innerText')).jsonValue().then((value)=>value);
+      const phone = await (await user_phone.getProperty('innerText')).jsonValue().then((value)=>value);  
+      const cnic = await (await user_cnic.getProperty('innerText')).jsonValue().then((value)=>value);
+      const area = await (await user_area.getProperty('innerText')).jsonValue().then((value)=>value);
+     
+      //Basic Information
+      var savingData = ip + ','+address.split('\n')[0] + ','+address.replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+email +','+phone.split('\n').pop() +','+cnic.split('\n').pop() +','+area.split('\n').pop();
+      //results =results.concat(await extractedEvaluateCall(page));
+      await writeCSV(savingData);
+
+    }
     await browser.close();
     return {savingData};
 }
 
 async function ReadCSV_urls(){
-    let data_lines=require('fs').readFileSync('urls.txt', 'utf-8').split(/\r?\n/);
-    for (let line in data_lines) {
-       var temp = await scrapeProduct("https:"+data_lines[line].replace(","," ").trim().toString());   
+    let data_lines=require('fs').readFileSync('urls.txt', 'utf-8').split(",");
+    data_lines = data_lines.map((value,index)=>"https://arifl3.sg-host.com/wp-admin/post.php?post="+data_lines[index].replace(","," ").trim().toString()+"&action=edit")
+    // for (let line in data_lines) {
+       var temp = await scrapeProduct(data_lines);   
+    //    var dir = './Users/'+data_lines[line].slice(24).split(".")[0];
+    //    if (!fs.existsSync(dir)){
+    //    await fs.mkdirSync(dir, { recursive: true });
+    // }
 
-       var dir = './Products/'+data_lines[line].slice(24).split(".")[0];
-       if (!fs.existsSync(dir)){
-       await fs.mkdirSync(dir, { recursive: true });
-    }
-
-      await writeCSV(dir,temp.savingData);
-    }
+      await writeCSV(temp.savingData);
+    // }
 }
-async function writeCSV(path,obj){
-   await fs.appendFile(path+'/Product.csv', obj, function (err) {
+async function writeCSV(obj){
+  console.log(obj);
+   await fs.appendFile('Users.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
         if (err) throw err;
       });
 }

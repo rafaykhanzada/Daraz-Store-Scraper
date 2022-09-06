@@ -1,7 +1,7 @@
 const puppeteer=require('puppeteer');
 const fs = require('fs');
 
-async function scrapeProduct(url){
+async function scrapeProduct(url,CurrentRow){
     const browser = await puppeteer.launch({ headless: false });
     const page =  await browser.newPage();
     await page.goto('https://arifl3.sg-host.com/qb-login');
@@ -12,9 +12,9 @@ async function scrapeProduct(url){
     await page.waitForTimeout(5000)
     var results = []; 
 
-    for (let index = 4; index < url.length; index++) {
+    for (let index = CurrentRow; index < url.length; index++) {
       await page.goto(url[index]);      
-      await page.waitForTimeout(5000)
+      await page.waitForTimeout(3000)
       var [user_cnic]=[];
     var [user_area]=[];
       //Elements
@@ -56,9 +56,10 @@ async function scrapeProduct(url){
 
 async function ReadCSV_urls(){
     let data_lines=require('fs').readFileSync('urls.txt', 'utf-8').split(",");
+    let CurrentRow=require('fs').readFileSync('Users.csv', 'utf-8').split("\n");
     data_lines = data_lines.map((value,index)=>"https://arifl3.sg-host.com/wp-admin/post.php?post="+data_lines[index].replace(","," ").trim().toString()+"&action=edit")
     // for (let line in data_lines) {
-       var temp = await scrapeProduct(data_lines);   
+       var temp = await scrapeProduct(data_lines,CurrentRow.length-1);   
     //    var dir = './Users/'+data_lines[line].slice(24).split(".")[0];
     //    if (!fs.existsSync(dir)){
     //    await fs.mkdirSync(dir, { recursive: true });

@@ -1,77 +1,65 @@
 const puppeteer=require('puppeteer');
 const fs = require('fs');
 
-async function scrapeProduct(url,CurrentRow){
+async function scrapeProduct(){
     const browser = await puppeteer.launch({ headless: false });
     const page =  await browser.newPage();
-    await page.goto('https://arifl3.sg-host.com/qb-login');
-    await page.$eval('#user_login', el => el.value = 'qist.admin');
-    await page.$eval('#user_pass', el => el.value = 'NnD08RVtzwEApAeBWgaj72^1'); 
-    ///#wp-submit
-    await page.click('#wp-submit');
-    await page.waitForTimeout(5000)
+    await page.goto('https://google.com.pk/');
     var results = []; 
 
-    for (let index = CurrentRow; index < url.length; index++) {
-      await page.goto(url[index]);      
-      await page.waitForTimeout(3000)
-      var [user_cnic]=[];
-    var [user_area]=[];
-      //Elements
-      const [user_ip] = await page.$x('//*[@id="order_data"]/p/span');
-      const [user_address] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[1]/p[1]');    
-      const [user_email] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[1]/p[2]/a');
-      const [user_phone] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[1]/p[3]/a');   
-      const [user_designation] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[3]');
-      
-      
-      ////*[@id="order_data"]/div[1]/div[2]/div[3]/p[2]
-      let designation ="";
-      //Filter out data
-      if (user_designation!=null) {
-       designation = await (await user_designation.getProperty('innerText')).jsonValue().then((value)=>value);
-       [user_cnic] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[2]');
-[user_area] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[3]');
-        
-      }else{
-        [user_cnic] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[1]');
-[user_area] = await page.$x('//*[@id="order_data"]/div[1]/div[2]/div[3]/p[2]');
-      }
-      const ip = await (await user_ip.getProperty('innerText')).jsonValue().then((value)=>value);
-      const address = await (await user_address.getProperty('innerText')).jsonValue().then((value)=>value);    
-      const email = await (await user_email.getProperty('innerText')).jsonValue().then((value)=>value);
-      const phone = await (await user_phone.getProperty('innerText')).jsonValue().then((value)=>value);  
-      const cnic = await (await user_cnic.getProperty('innerText')).jsonValue().then((value)=>value);
-      const area = await (await user_area.getProperty('innerText')).jsonValue().then((value)=>value);
-     
-      //Basic Information
-      var savingData = ip + ','+address.split('\n')[0] + ','+address.replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+email +','+phone.split('\n').pop() +','+cnic.split('\n').pop() +','+area.split('\n').pop();
-      //results =results.concat(await extractedEvaluateCall(page));
-      await writeCSV(savingData);
+    for (let index = 1; index < 462; index++) {
+    var results = []; 
 
-    }
+      await page.goto("https://www.qistbazaar.pk/wp-json/wc/v3/orders?consumer_key=ck_414d7bae3787cdd403d86e8920d2ac598d4abf8d&consumer_secret=cs_5bc36625b282d7c33e4b6a7f6917d12137a91d41&per_page=99&page="+[index]);      
+console.log(index);  
+      const [user_ip] = await page.$x('/html/body/pre');
+      const area = await (await user_ip.getProperty('innerText')).jsonValue().then((value)=>value);
+      var data = JSON.parse(area);
+     data.map((value)=>{
+      if (value.meta_data.filter((e)=>e.key=='_billing_area_elaqa').length == 0) {
+        var savingData =  value.billing.first_name.replace(/,/g,"").trim() + ' '+value.billing.last_name.replace(/,/g,"").trim()+","+value.billing.address_1.replace(":","").replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+value.billing.email +','+value.billing.phone+','+value.meta_data.filter((e)=>e.key=='_billing_nic')[0].value.replace(/,/g,"").trim() +","+value.billing.company.replace(/,/g,"").trim()+','+value.meta_data.filter((e)=>e.key=='_billing_designation')[0].value +','+''+","+value.billing.city;
+        
+      }if (value.meta_data.filter((e)=>e.key=='_billing_designation').length > 0 && value.meta_data.filter((e)=>e.key=='_billing_area_elaqa').length > 0) {
+        var savingData =  value.billing.first_name.replace(/,/g,"").trim() + ' '+value.billing.last_name.replace(/,/g,"").trim()+","+value.billing.address_1.replace(":","").replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+value.billing.email +','+value.billing.phone+','+value.meta_data.filter((e)=>e.key=='_billing_nic')[0].value.replace(/,/g,"").trim() +","+value.billing.company.replace(/,/g,"").trim()+','+value.meta_data.filter((e)=>e.key=='_billing_designation')[0].value +','+value.meta_data.filter((e)=>e.key=='_billing_area_elaqa')[0].value+","+value.billing.city;
+        
+      }
+      if(value.meta_data.filter((e)=>e.key=='_billing_designation').length == 0 && value.meta_data.filter((e)=>e.key=='_billing_area_elaqa').length == 0){
+        var savingData =  value.billing.first_name.replace(/,/g,"").trim() + ' '+value.billing.last_name.replace(/,/g,"").trim()+","+value.billing.address_1.replace(":","").replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+value.billing.email +','+value.billing.phone+','+value.meta_data.filter((e)=>e.key=='_billing_nic')[0].value.replace(/,/g,"").trim() +","+value.billing.company.replace(/,/g,"").trim()+','+'' +','+value.meta_data.filter((e)=>e.key=='_billing_area_elaqa')[0].value+","+value.billing.city;
+
+      }
+        results.push(savingData);
+      })
+      results.map(async (text)=>{
+
+        await writeCSV(text);
+      
+      }) 
+  }
+      // for (let index1 = 0; index1 < data.length; index1++) {
+      //  data[index1].billing
+      //  var savingData = data[index1].billing.first_name + ' '+data[index1].billing.last_name+","+data[index1].billing.address_1.replace(":","").replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+data[index1].billing.email +','+data[index1].billing.phone+','+data[index1].meta_data.map((value)=>value.value)[2]+","+data[index1].billing.company+','+","+data[index1].meta_data.map((value)=>value.value)[1]+','+data[index1].meta_data.map((value)=>value.value)[3];
+results.map(async (text)=>{
+
+  await writeCSV(text);
+
+})        
+      // }
+      //Basic Information
+     
+      //results =results.concat(await extractedEvaluateCall(page));
+
     await browser.close();
     return {savingData};
 }
 
 async function ReadCSV_urls(){
-    let data_lines=require('fs').readFileSync('urls.txt', 'utf-8').split(",");
-    let CurrentRow=require('fs').readFileSync('Users.csv', 'utf-8').split("\n");
-    data_lines = data_lines.map((value,index)=>"https://arifl3.sg-host.com/wp-admin/post.php?post="+data_lines[index].replace(","," ").trim().toString()+"&action=edit")
-    // for (let line in data_lines) {
-       var temp = await scrapeProduct(data_lines,CurrentRow.length-1);   
-    //    var dir = './Users/'+data_lines[line].slice(24).split(".")[0];
-    //    if (!fs.existsSync(dir)){
-    //    await fs.mkdirSync(dir, { recursive: true });
-    // }
-
-      await writeCSV(temp.savingData);
-    // }
+       var temp = await scrapeProduct();   
 }
 async function writeCSV(obj){
   console.log(obj);
-   await fs.appendFile('Users.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
+  var data = await fs.appendFile('overload.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
         if (err) throw err;
       });
+      console.log(data);
 }
 ReadCSV_urls();

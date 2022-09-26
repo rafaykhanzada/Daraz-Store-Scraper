@@ -2,12 +2,12 @@ const puppeteer=require('puppeteer');
 const fs = require('fs');
 
 async function scrapeProduct(){
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: true });
     const page =  await browser.newPage();
     await page.goto('https://google.com.pk/');
     var results = []; 
 
-    for (let index = 1; index < 462; index++) {
+    for (let index = 1; index < 478; index++) {
     var results = []; 
 
       await page.goto("https://www.qistbazaar.pk/wp-json/wc/v3/orders?consumer_key=ck_414d7bae3787cdd403d86e8920d2ac598d4abf8d&consumer_secret=cs_5bc36625b282d7c33e4b6a7f6917d12137a91d41&per_page=99&page="+[index]);      
@@ -57,7 +57,7 @@ async function ReadCSV_urls(){
 }
 async function writeCSV(obj){
   console.log(obj);
-  var data = await fs.appendFile('overload.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
+  var data = await fs.appendFile('overload_Sec.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
         if (err) throw err;
       });
       console.log(data);

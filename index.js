@@ -7,7 +7,7 @@ async function scrapeProduct(){
     await page.goto('https://google.com.pk/');
     var results = []; 
 
-    for (let index = 1; index < 484; index++) {
+    for (let index = 1; index < 498; index++) {
     var results = []; 
 
       await page.goto("https://www.qistbazaar.pk/wp-json/wc/v3/orders?consumer_key=ck_414d7bae3787cdd403d86e8920d2ac598d4abf8d&consumer_secret=cs_5bc36625b282d7c33e4b6a7f6917d12137a91d41&per_page=99&page="+[index]);      
@@ -57,7 +57,7 @@ async function ReadCSV_urls(){
 }
 async function writeCSV(obj){
   console.log(obj);
-  var data = await fs.appendFile('Main_Data'+new Date().getDate()+'-'+new Date().getMonth()+'.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
+  var data = await fs.appendFile('Main_Data_'+new Date().getDate()+'-'+new Date().getMonth()+'.csv', obj.split(",").map((x)=>JSON.stringify(x)).toString()+'\n', function (err) {
         if (err) throw err;
       });
       console.log(data);

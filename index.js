@@ -7,7 +7,7 @@ async function scrapeProduct(){
     await page.goto('https://google.com.pk/');
     var results = []; 
 
-    for (let index = 1; index < 510; index++) {
+    for (let index = 1; index < 525; index++) {
     var results = []; 
 
       await page.goto("https://www.qistbazaar.pk/wp-json/wc/v3/orders?consumer_key=ck_414d7bae3787cdd403d86e8920d2ac598d4abf8d&consumer_secret=cs_5bc36625b282d7c33e4b6a7f6917d12137a91d41&per_page=99&page="+[index]);      
@@ -24,6 +24,10 @@ console.log(index);
         
       }
       if(value.meta_data.filter((e)=>e.key=='_billing_designation').length == 0 && value.meta_data.filter((e)=>e.key=='_billing_area_elaqa').length == 0){
+        var savingData =  value.billing.first_name.replace(/,/g,"").trim() + ' '+value.billing.last_name.replace(/,/g,"").trim()+","+value.billing.address_1.replace(":","").replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+value.billing.email +','+value.billing.phone+','+value.meta_data.filter((e)=>e.key=='_billing_nic')[0].value.replace(/,/g,"").trim() +","+value.billing.company.replace(/,/g,"").trim()+','+'' +','+value.meta_data.filter((e)=>e.key=='_billing_area_elaqa')[0].value+","+value.billing.city;
+
+      }
+      if(value.meta_data.filter((e)=>e.key=='_billing_designation').length == 0 && value.meta_data.filter((e)=>e.key=='_billing_area_elaqa').length > 0){
         var savingData =  value.billing.first_name.replace(/,/g,"").trim() + ' '+value.billing.last_name.replace(/,/g,"").trim()+","+value.billing.address_1.replace(":","").replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g,"").trim() +  ','+value.billing.email +','+value.billing.phone+','+value.meta_data.filter((e)=>e.key=='_billing_nic')[0].value.replace(/,/g,"").trim() +","+value.billing.company.replace(/,/g,"").trim()+','+'' +','+value.meta_data.filter((e)=>e.key=='_billing_area_elaqa')[0].value+","+value.billing.city;
 
       }
